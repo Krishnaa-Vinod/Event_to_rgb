@@ -1,0 +1,23 @@
+{
+  "data": {
+    "bags_dir": "/scratch/kvinod/bags/overfitting_data/data_collect_20260228_153433",
+    "h5_dir": "/scratch/kvinod/bags/eGo_navi_overfit_data_h5",
+    "source_pipeline_repo": "/scratch/kvinod/eventnavpp_datagen_pipeline"
+  },
+  "models": {
+    "e2vid_repo": "third_party/rpg_e2vid",
+    "firenet_repo": "third_party/rpg_e2vid_firenet",
+    "weights_dir": "weights",
+    "e2vid_weights": "weights/E2VID_lightweight.pth.tar",
+    "firenet_weights": "weights/firenet.pth.tar"
+  },
+  "output": {
+    "base_dir": "outputs",
+    "results_dir": "results"
+  },
+  "runtime": {
+    "device": "auto",
+    "batch_size": 1,
+    "num_workers": 4
+  }
+}

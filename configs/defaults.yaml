@@ -1,0 +1,60 @@
+# Default configuration for event-to-RGB reconstruction pipeline
+
+# Evaluation protocol
+evaluation:
+  primary_comparison:
+    window_duration_ms: 250  # Fair comparison using 250ms windows
+    leaderboard_name: "leaderboard_fair_250ms"
+
+  bag_sweep:
+    enabled: true
+    window_durations_ms: [33, 50, 100, 250]
+    leaderboard_name: "leaderboard_bag_sweep"
+
+  metrics:
+    - mse_gray
+    - mae_gray
+    - psnr_gray
+    - ssim_gray
+    - mean_timestamp_delta_ms
+    - median_timestamp_delta_ms
+    - mean_inference_ms_per_frame
+    - fps
+
+  optional_metrics:
+    - lpips_gray  # Only if easy to install
+
+# Methods to evaluate
+methods:
+  bag_direct:
+    - e2vid
+    - firenet
+
+  h5_direct:
+    - e2vid  # If compatible
+    - firenet  # If compatible
+
+  baselines:
+    - time_surface
+
+# Time surface baseline configuration
+time_surface:
+  tau_ms: 50  # Exponential decay constant
+  normalization: "minmax"
+
+# Image alignment and geometry
+geometry:
+  event_resolution: [720, 1280]
+  rgb_resolution: [1024, 1280]
+  alignment_policy: "center_crop"  # or "resize", "ecc"
+
+# Smoke test configuration
+smoke_test:
+  enabled: false
+  max_frames: 10
+  max_sequences: 1
+
+# Logging
+logging:
+  level: "INFO"
+  save_logs: true

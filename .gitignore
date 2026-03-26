@@ -1,0 +1,65 @@
+# Data and datasets
+data/
+datasets/
+bags/
+*.mcap
+*.h5
+*.bag
+
+# Model weights and checkpoints
+weights/
+checkpoints/
+*.pt
+*.pth
+*.tar
+*.tar.gz
+
+# Third-party dependencies
+third_party/
+dependencies/
+external/
+
+# Large outputs and temporary files
+outputs/full_runs/
+outputs/tmp/
+tmp/
+temp/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Environment and IDE files
+.env
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Conda and pip
+.conda/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Log files
+*.log
+logs/
+
+# Archives and compressed files
+*.zip
+*.gz
+*.bz2
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
