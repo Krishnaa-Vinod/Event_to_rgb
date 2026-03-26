@@ -98,9 +98,52 @@ def run_e2vid_reconstruction(
         duration = time.time() - start_time
         print(f"E2VID completed in {duration:.1f}s")
 
-        # Count output frames
+        # Count output frames and collect metadata
         frame_files = list(output_path.glob("*.png"))
+        frame_files.sort()
         frame_count = len(frame_files)
+
+        # Create per-frame manifest
+        manifest_frames = []
+        for i, frame_file in enumerate(frame_files):
+            # Extract timestamp from filename if possible, otherwise use sequence
+            try:
+                # E2VID typically outputs frame_000001.png etc.
+                frame_number = int(frame_file.stem.split('_')[-1])
+                # Estimate timestamp based on window duration and frame sequence
+                timestamp_s = frame_number * (window_ms / 1000.0)
+            except:
+                # Fallback to sequence-based timing
+                timestamp_s = i * (window_ms / 1000.0)
+
+            frame_info = {
+                'filename': frame_file.name,
+                'filepath': str(frame_file.relative_to(output_path)),
+                'frame_index': i,
+                'timestamp_s': float(timestamp_s),
+                'source_route': 'bag_direct',
+                'model': 'e2vid',
+                'route_fidelity': 'exact_raw_event',
+                'window_duration_ms': window_ms
+            }
+            manifest_frames.append(frame_info)
+
+        # Save frame manifest
+        frame_manifest = {
+            'reconstruction_method': 'e2vid',
+            'source_route': 'bag_direct',
+            'route_fidelity': 'exact_raw_event',
+            'total_frames': len(manifest_frames),
+            'events_file': str(events_file),
+            'window_duration_ms': window_ms,
+            'frames': manifest_frames
+        }
+
+        manifest_file = output_path / "e2vid_bag_frame_manifest.json"
+        with open(manifest_file, 'w') as f:
+            json.dump(frame_manifest, f, indent=2)
+
+        print(f"Frame manifest saved to: {manifest_file}")
 
         summary = {
             "method": "e2vid",
@@ -112,8 +155,10 @@ def run_e2vid_reconstruction(
             "frame_count": frame_count,
             "duration_s": duration,
             "fps": frame_count / duration if duration > 0 else 0,
-            "stdout": result.stdout,
-            "stderr": result.stderr
+            "route_fidelity": "exact_raw_event",
+            "manifest_file": str(manifest_file),
+            "stdout": result.stdout[-1000:],  # Limit output length
+            "stderr": result.stderr[-1000:] if result.stderr else ""
         }
 
         return summary

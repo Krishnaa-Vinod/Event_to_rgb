@@ -102,7 +102,7 @@ def run_e2vid_reconstruction(event_file, weights_path, output_dir, window_durati
         "--path_to_model", weights_path,
         "--input_file", event_file,
         "--fixed_duration",
-        "--window_duration", str(window_duration_ms / 1000),  # E2VID expects seconds
+        "--window_duration", str(window_duration_ms),  # E2VID expects milliseconds
         "--output_folder", output_dir,
         "--dataset_name", "h5_reconstruction",
         "--auto_hdr"
@@ -142,7 +142,8 @@ def run_h5_reconstruction(h5_file, output_dir, model_name='e2vid', max_frames=No
         window_duration_ms: Window duration for reconstruction
     """
 
-    print(f"=== H5 Direct Reconstruction: {model_name.upper()} ===")
+    print(f"=== H5 Direct Reconstruction: {model_name.upper()} (APPROXIMATE) ===")
+    print("WARNING: H5-direct uses voxel->pseudo-event conversion and is approximate!")
     print(f"H5 file: {h5_file}")
     print(f"Output: {output_dir}")
     print(f"Max frames: {max_frames}")
@@ -191,6 +192,52 @@ def run_h5_reconstruction(h5_file, output_dir, model_name='e2vid', max_frames=No
         if success:
             print(f"\n✓ Reconstruction complete! Check {output_path}")
 
+            # Create per-frame manifest by reading the E2VID output
+            manifest_frames = []
+            e2vid_output_imgs = list(output_path.glob("**/*.png"))
+            e2vid_output_imgs.sort()
+
+            print(f"Found {len(e2vid_output_imgs)} output frames for manifest")
+
+            # Match output frames to original timestamps
+            with h5py.File(h5_file, 'r') as f:
+                if max_frames and len(f['timestamps_ns']) > max_frames:
+                    h5_timestamps = f['timestamps_ns'][:max_frames]
+                else:
+                    h5_timestamps = f['timestamps_ns'][...]
+
+            for i, img_file in enumerate(e2vid_output_imgs):
+                if i < len(h5_timestamps):
+                    frame_info = {
+                        'filename': img_file.name,
+                        'filepath': str(img_file.relative_to(output_path)),
+                        'frame_index': i,
+                        'timestamp_s': float(h5_timestamps[i] / 1e9),
+                        'timestamp_ns': int(h5_timestamps[i]),
+                        'source_route': 'h5_direct',
+                        'model': model_name,
+                        'route_fidelity': 'approximate_voxel_to_pseudo_event',
+                        'window_duration_ms': window_duration_ms
+                    }
+                    manifest_frames.append(frame_info)
+
+            # Save frame manifest
+            frame_manifest = {
+                'reconstruction_method': model_name,
+                'source_route': 'h5_direct',
+                'route_fidelity': 'approximate_voxel_to_pseudo_event',
+                'total_frames': len(manifest_frames),
+                'h5_file': str(h5_file),
+                'window_duration_ms': window_duration_ms,
+                'frames': manifest_frames
+            }
+
+            manifest_file = output_path / f"{model_name}_h5_frame_manifest.json"
+            with open(manifest_file, 'w') as f:
+                json.dump(frame_manifest, f, indent=2)
+
+            print(f"Frame manifest saved to: {manifest_file}")
+
         # Save summary
         summary = {
             'h5_file': str(h5_file),
@@ -200,7 +247,10 @@ def run_h5_reconstruction(h5_file, output_dir, model_name='e2vid', max_frames=No
             'window_duration_ms': window_duration_ms,
             'event_count': event_count,
             'success': success,
-            'note': 'H5 voxel->event conversion is approximate'
+            'route_fidelity': 'approximate_voxel_to_pseudo_event',
+            'note': 'H5 voxel->event conversion is approximate - not equivalent to raw bag events',
+            'pseudo_event_thresholds': {'positive': 0.1, 'negative': -0.1},
+            'temporal_bin_spread_ms': 0.25 * 5  # 5 bins over 250ms window
         }
 
         summary_file = output_path / f"{model_name}_h5_summary.json"

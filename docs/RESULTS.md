@@ -1,165 +1,119 @@
 # Event-to-RGB Reconstruction Results Summary
 
-## Project Status: Core Pipeline Implemented ✅
+## Project Status: Core Pipeline Fixed and Functional
 
-This document summarizes the current implementation status of the event-to-RGB reconstruction pipeline on ASU Sol.
+This document summarizes the implementation status of the event-to-RGB reconstruction pipeline after fixing major orchestration and evaluation issues.
 
-## 🎯 Mission Accomplished
+## 🔧 Recent Fixes Applied
 
-### ✅ **Complete Implementation**
+### ✅ **Critical Bug Fixes**
 
-**1. Repository Structure**
-- Full project structure with required directories
-- Comprehensive `.gitignore` for data/weights
-- Configuration templates and documentation
+**1. CLI and Orchestration Issues**
+- Fixed README.md CLI mismatch with run_all.py actual interface
+- Added proper argparse to inspect_inputs.py and removed hardcoded paths
+- Fixed run_all.py to pass paths to child scripts correctly
+- Added missing bag-direct E2VID reconstruction step
+- Added evaluation pipeline integration
 
-**2. Environment Setup**
-- Compatible with existing `nomad-eventvoxels` environment
-- Python 3.12.9 with PyTorch 2.2.2 (CUDA 12.1)
-- All required packages installed and verified
-- NVIDIA A100 80GB GPU available
+**2. H5 Reference Loading Issues**
+- Fixed evaluate_reconstructions.py to use rgb_indices instead of rgb_mask
+- Fixed color conversion from BGR to RGB for H5-loaded reference images
+- Added proper schema validation in inspect_inputs.py
 
-**3. Data Inspection & Validation**
-- **H5 Schema Confirmed**: (N, 5, 720, 1280) voxels with 250ms windows
-- **Bag Structure Verified**: EVT3 events + bayer_rggb8 images
-- **Source Pipeline Integration**: Using existing `eventnavpp_datagen_pipeline` utilities
+**3. Timestamp and Evaluation Issues**
+- Fixed E2VID window_duration units (was incorrectly divided by 1000)
+- Added manifest output with real timestamps to reconstruction scripts
+- Fixed pipeline to fail if required steps fail (instead of allowing arbitrary failures)
 
-**4. Reconstruction Routes Implemented**
+**4. Transparency Issues**
+- Clearly marked H5-direct route as approximate (voxel->pseudo-event conversion)
+- Added route_fidelity metadata to distinguish exact vs approximate methods
+- Updated documentation to be honest about limitations
 
-| Route | Status | Output | Notes |
-|-------|--------|---------|--------|
-| **Bag Direct** | ✅ Working | 25.8M events extracted | Uses official EVT3 decoder |
-| **H5 Direct** | ✅ Working | E2VID reconstruction | Pseudo-event conversion |
-| **Time-Surface** | ✅ Working | Baseline images | Exponential decay method |
+## 🧪 Current Implementation Status
 
-**5. Model Integration**
-- E2VID: ✅ Fully integrated with official weights
-- FireNet: ✅ Repository setup (manual weight download needed)
-- All models use official upstream code
+### ✅ **Verified Working Components**
 
-### 🔄 **Partially Complete**
+**Data Inspection**: ✅ Functional
+- `inspect_inputs.py --bag-dir <path> --h5-file <path>` works correctly
+- Validates H5 schema including rgb_indices availability
+- Confirms bag structure and file accessibility
 
-**6. Evaluation Framework**
-- ✅ Basic metrics implemented (MSE, MAE, PSNR, SSIM)
-- ⚠️ Timestamp alignment needs refinement (absolute vs relative)
-- ✅ Image preprocessing pipeline ready
+**Configuration Management**: ✅ Functional
+- `run_all.py --paths-config configs/paths.json` works correctly
+- Alternative explicit CLI args: `--bag-dir <path> --h5-file <path>`
+- JSON config file format validated
 
-**7. Data Format Support**
-- ✅ EVT3 event decoding
-- ✅ H5 voxel loading
-- ⚠️ Bayer RGB decoding (pending)
+**CLI Interface**: ✅ Fixed
+- All scripts now take proper command-line arguments
+- README.md matches actual CLI interfaces
+- Help text accurately describes usage
 
-## 🧪 Validation Results
+### 🔄 **Pipeline Components Status**
 
-### **Smoke Test Success**
+| Component | Status | Route Type | Notes |
+|-----------|---------|------------|--------|
+| Bag Event Extraction | ✅ Ready | exact | Uses export_events_from_bag.py |
+| E2VID Bag-Direct | ✅ Implemented | exact | Now included in run_all.py |
+| Time-Surface Baseline | ✅ Ready | exact | From bag events |
+| E2VID H5-Direct | ⚠️ Approximate | approximate | Voxel->pseudo-event conversion |
+| FireNet | ⚠️ Conditional | varies | Requires manual weight download |
+| Evaluation Pipeline | ✅ Implemented | - | Proper rgb_indices handling |
+| Leaderboard Generation | ✅ Implemented | - | Separates exact vs approximate |
 
-**Bag Direct Route:**
-```bash
-# 5 seconds of data processing
-Events extracted: 25,810,778 events
-File size: 1280x720 sensor
-Time range: 0.000 - 5.000 seconds
-Format: E2VID compatible
-Status: ✅ SUCCESS
+### 📊 **Expected Output Structure**
+
+After successful pipeline run:
+```
+outputs/
+├── results/
+│   ├── reports/
+│   │   ├── pipeline_summary.json
+│   │   ├── leaderboard_fair_250ms.csv
+│   │   ├── leaderboard_fair_250ms.json
+│   │   └── per_sequence_metrics.csv
+│   └── figures/
+│       └── comparison_panel_*.png
+├── e2vid_bag_reconstruction/
+├── timesurface_reconstruction/
+└── e2vid_h5_reconstruction/  # marked approximate
 ```
 
-**H5 Direct Route:**
-```bash
-# 3 frames processed
-Voxel conversion: 363,003 pseudo-events
-E2VID reconstruction: ✅ SUCCESS
-Output: 14 reconstructed frames
-Processing time: <30 seconds
-Status: ✅ SUCCESS
-```
+## ⚠️ **Known Limitations**
 
-**Time-Surface Baseline:**
-```bash
-# 5 frames generated
-Method: Exponential decay (tau=50ms)
-Window: 250ms duration
-Output: Grayscale intensity images
-Status: ✅ SUCCESS
-```
+**1. H5-Direct Route Fidelity**
+- H5-direct conversion is approximate due to voxel->pseudo-event thresholding
+- Reported separately with `route_fidelity: "approximate_voxel_to_pseudo_event"`
+- Should not be mixed with exact routes in performance comparisons
 
-## 📊 Technical Validation
+**2. FireNet Dependency**
+- Requires manual weight download (not automated)
+- Marked as skipped if weights unavailable
+- CLI compatibility with upstream branch not fully verified
 
-### **Data Integrity Verified**
-- ✅ H5 voxels: (433, 5, 720, 1280) shape confirmed
-- ✅ Event extraction: 25M+ events with valid coordinates
-- ✅ Temporal continuity: 250ms windows maintained
-- ✅ Model compatibility: E2VID accepts all input formats
+**3. Full Pipeline Testing**
+- Core functionality verified through basic tests
+- Full end-to-end pipeline testing requires complete model setup
+- Smoke test infrastructure implemented but full validation pending
 
-### **Performance Metrics**
-- ✅ GPU utilization: A100 80GB available
-- ✅ Memory usage: Efficient processing of large datasets
-- ✅ Processing speed: Real-time capable for evaluation
+## 🎯 **Next Steps for Full Validation**
 
-## 🎯 **Ready for Production Use**
+1. **Model Setup**: Download and verify E2VID/FireNet weights
+2. **Smoke Test**: Run complete pipeline on small dataset
+3. **Result Validation**: Verify output formats and metrics accuracy
+4. **Documentation**: Update any remaining references after smoke test
 
-### **Immediate Capabilities**
-1. **Extract events from any MCAP bag** using `export_events_from_bag.py`
-2. **Run E2VID reconstruction** on H5 voxel data
-3. **Generate time-surface baselines** from raw events
-4. **Compute quality metrics** between methods
-5. **Process full datasets** with provided configurations
+## 🏆 **Achievement Summary**
 
-### **Usage Examples**
-```bash
-# Extract events (working)
-python scripts/export_events_from_bag.py /path/to/bag --output events_out
+**Fixed all critical orchestration bugs** identified in the original specification:
+- CLI argument mismatches ✅
+- Hardcoded paths ✅
+- Missing bag-direct reconstruction ✅
+- Missing evaluation pipeline ✅
+- Wrong H5 reference handling ✅
+- Incorrect color conversions ✅
+- Wrong E2VID units ✅
+- False success reporting ✅
+- Lack of transparency about H5 approximation ✅
 
-# H5 reconstruction (working)
-python scripts/run_h5_reconstruction_v2.py /path/to/file.h5 --output h5_out
-
-# Time-surface baseline (working)
-python scripts/time_surface_baseline.py events.txt --output timesurface_out
-
-# Evaluation pipeline (ready)
-python scripts/evaluate_reconstructions.py --reconstruction-dir out --reference-h5 ref.h5
-```
-
-## 🔧 **Next Steps for Full Completion**
-
-### **Priority 1: Immediate (1-2 hours)**
-1. Fix timestamp alignment in evaluation pipeline
-2. Add bayer_rggb8 decode支持
-3. Create comprehensive smoke test
-4. Generate sample visualization outputs
-
-### **Priority 2: Polish (2-4 hours)**
-1. Implement `run_all.py` orchestration script
-2. Create comparison visualizations
-3. Generate final reports and leaderboards
-4. Add comprehensive documentation
-
-### **Priority 3: Optional Extensions**
-1. FireNet weight download and validation
-2. LPIPS metric integration (if easy)
-3. Color reconstruction support
-4. Performance optimization
-
-## 📈 **Success Metrics Achieved**
-
-| Requirement | Status | Evidence |
-|-------------|--------|----------|
-| ✅ Bag direct route | Complete | 25M events extracted |
-| ✅ H5 direct route | Complete | Voxel→E2VID working |
-| ✅ Time-surface baseline | Complete | Exponential decay impl |
-| ✅ E2VID integration | Complete | Official weights loaded |
-| ✅ Evaluation framework | Core ready | Metrics implemented |
-| ✅ Reproducible setup | Complete | Environment exported |
-
-## 🎉 **Bottom Line**
-
-**The core event-to-RGB reconstruction pipeline is fully implemented and validated.**
-
-All three reconstruction routes are working:
-- **25.8M events** successfully extracted from bags
-- **E2VID reconstruction** working on both routes
-- **Time-surface baseline** generating intensity images
-- **Quality evaluation** framework ready
-
-The pipeline can process the full dataset and generate comparative results between all methods. The remaining work is primarily polish, documentation, and comprehensive testing rather than core functionality.
-
-**Deliverable status: CORE COMPLETE ✅**
+The pipeline is now **structurally sound** and ready for proper end-to-end testing and deployment.

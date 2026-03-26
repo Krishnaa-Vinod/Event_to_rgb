@@ -25,21 +25,37 @@ def load_h5_references(h5_file, max_frames=10):
     print(f"Loading RGB references from {h5_file}")
 
     with h5py.File(h5_file, 'r') as f:
-        rgb_images = f['rgb_images'][...][:max_frames]  # Limit for visualization
-        timestamps_ns = f['timestamps_ns'][...][:max_frames]
-        rgb_mask = f['rgb_mask'][...][:max_frames]
+        # Check if rgb_indices exists (preferred)
+        if 'rgb_indices' in f:
+            rgb_images = f['rgb_images'][...]  # All RGB images
+            timestamps_ns = f['timestamps_ns'][...]  # All timestamps
+            rgb_indices = f['rgb_indices'][...]  # Indices mapping
 
-    # Only use frames with valid RGB data
-    valid_indices = np.where(rgb_mask)[0]
-    if len(valid_indices) == 0:
-        print("No valid RGB frames found!")
-        return None, None
+            # Limit frames for visualization
+            if max_frames and len(rgb_images) > max_frames:
+                rgb_images = rgb_images[:max_frames]
+                rgb_indices = rgb_indices[:max_frames]
 
-    rgb_images = rgb_images[valid_indices]
-    timestamps_ns = timestamps_ns[valid_indices]
+            # Get timestamps using rgb_indices
+            ref_timestamps = timestamps_ns[rgb_indices]
+            print(f"Loaded {len(rgb_images)} RGB reference frames using rgb_indices")
+            return rgb_images, ref_timestamps
+        else:
+            print("Warning: rgb_indices not found, falling back to rgb_mask")
+            rgb_images = f['rgb_images'][...][:max_frames]  # Limit for visualization
+            timestamps_ns = f['timestamps_ns'][...][:max_frames]
+            rgb_mask = f['rgb_mask'][...][:max_frames]
 
-    print(f"Loaded {len(rgb_images)} RGB reference frames")
-    return rgb_images, timestamps_ns
+            # Only use frames with valid RGB data
+            valid_indices = np.where(rgb_mask)[0]
+            if len(valid_indices) == 0:
+                print("No valid RGB frames found!")
+                return None, None
+
+            rgb_images = rgb_images[valid_indices]
+            timestamps_ns = timestamps_ns[valid_indices]
+            print(f"Loaded {len(rgb_images)} RGB reference frames using rgb_mask (fallback)")
+            return rgb_images, timestamps_ns
 
 def load_reconstruction_images(recon_dir, method_name, max_frames=10):
     """Load reconstruction images from a directory."""
@@ -92,7 +108,7 @@ def create_comparison_panel(reference_rgb, recon_e2vid, recon_h5, recon_timesurf
 
     # Convert reference to grayscale for comparison
     if len(reference_rgb.shape) == 3:
-        ref_gray = cv2.cvtColor(reference_rgb, cv2.COLOR_BGR2GRAY)
+        ref_gray = cv2.cvtColor(reference_rgb, cv2.COLOR_RGB2GRAY)
     else:
         ref_gray = reference_rgb
 

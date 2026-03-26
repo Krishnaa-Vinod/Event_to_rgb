@@ -24,7 +24,25 @@ This document explicitly describes the assumptions made in the pipeline implemen
 
 **Alternative approaches considered**: ECC-based spatial alignment was deemed more complex than necessary.
 
-### **3. Image Geometry Handling**
+### **4. H5-Direct Route Fidelity**
+**CRITICAL LIMITATION**: The H5-direct reconstruction route is **approximate** and not equivalent to bag-direct.
+
+**Technical details**:
+- H5 files contain pre-computed 5-bin voxel grids (5×720×1280)
+- H5-direct converts voxel bins back to pseudo-events using fixed thresholds:
+  - Positive events: voxel_value > 0.1
+  - Negative events: voxel_value < -0.1
+- Temporal spread: 5 bins distributed over 250ms window
+- This pseudo-event reconstruction may not match the original event stream
+
+**Implications**:
+- H5-direct results are labeled `route_fidelity: "approximate_voxel_to_pseudo_event"`
+- H5-direct is reported separately from the main fair leaderboard
+- Only bag-direct routes provide `route_fidelity: "exact_raw_event"`
+
+**Use cases**: H5-direct is useful for development and debugging but should not be used for authoritative performance claims.
+
+### **5. Image Geometry Handling**
 **Assumption**: Center-crop/resize to common 720×1280 resolution is fair.
 
 **Geometry differences**:

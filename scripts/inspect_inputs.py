@@ -7,6 +7,7 @@ This script verifies the actual schema rather than relying on assumptions.
 import h5py
 import os
 import sys
+import argparse
 import numpy as np
 from pathlib import Path
 import yaml
@@ -77,36 +78,69 @@ def inspect_bag_metadata(bag_dir):
         print(f"  {mcap_file.name}: {size_gb:.2f} GB")
 
 def main():
-    # Paths from the mission specification
-    h5_dir = "/scratch/kvinod/bags/eGo_navi_overfit_data_h5"
-    bag_dir = "/scratch/kvinod/bags/overfitting_data/data_collect_20260228_153433"
+    parser = argparse.ArgumentParser(description="Inspect H5 files and bag directory structure")
+    parser.add_argument("--bag-dir", required=True,
+                       help="Path to bag directory to inspect")
+    parser.add_argument("--h5-file", required=True,
+                       help="Path to H5 file to inspect")
+    parser.add_argument("--h5-dir",
+                       help="Optional: H5 directory to list additional files")
+
+    args = parser.parse_args()
 
     print("=== EVENT-TO-RGB DATA INSPECTION ===")
-    print(f"H5 directory: {h5_dir}")
-    print(f"Bag directory: {bag_dir}")
+    print(f"H5 file: {args.h5_file}")
+    print(f"Bag directory: {args.bag_dir}")
 
     # Inspect bag directory
-    inspect_bag_metadata(bag_dir)
+    inspect_bag_metadata(args.bag_dir)
 
-    # Inspect one H5 file (the matching one)
-    h5_file = os.path.join(h5_dir, "data_collect_20260228_153433.h5")
-    if os.path.exists(h5_file):
-        inspect_h5_file(h5_file)
+    # Inspect the specified H5 file
+    if os.path.exists(args.h5_file):
+        inspect_h5_file(args.h5_file)
     else:
-        print(f"\nMatching H5 file not found: {h5_file}")
-        print("Available H5 files:")
-        if os.path.exists(h5_dir):
-            for f in os.listdir(h5_dir):
-                if f.endswith('.h5'):
-                    print(f"  {f}")
+        print(f"\nSpecified H5 file not found: {args.h5_file}")
 
-    # Also inspect a second H5 file for comparison
-    h5_files = [f for f in os.listdir(h5_dir) if f.endswith('.h5')]
-    if len(h5_files) > 1:
-        second_h5 = os.path.join(h5_dir, h5_files[1])
-        inspect_h5_file(second_h5)
+    # If H5 directory provided, show other available files
+    if args.h5_dir and os.path.exists(args.h5_dir):
+        print(f"\nOther H5 files in {args.h5_dir}:")
+        for f in os.listdir(args.h5_dir):
+            if f.endswith('.h5'):
+                print(f"  {f}")
 
     print(f"\n=== INSPECTION COMPLETE ===")
+
+    # Schema validation
+    print(f"\n=== SCHEMA VALIDATION ===")
+    try:
+        import h5py
+        with h5py.File(args.h5_file, 'r') as f:
+            has_rgb_indices = 'rgb_indices' in f
+            print(f"Has rgb_indices dataset: {has_rgb_indices}")
+
+            if 'rgb_images' in f and 'rgb_mask' in f:
+                rgb_images_len = len(f['rgb_images'])
+                rgb_mask_len = len(f['rgb_mask'])
+                rgb_mask_sum = f['rgb_mask'][...].sum()
+                print(f"RGB images length: {rgb_images_len}")
+                print(f"RGB mask length: {rgb_mask_len}")
+                print(f"RGB mask true count: {rgb_mask_sum}")
+
+                if has_rgb_indices:
+                    rgb_indices_len = len(f['rgb_indices'])
+                    print(f"RGB indices length: {rgb_indices_len}")
+
+                    if rgb_indices_len == rgb_images_len:
+                        print("✓ RGB indices and images lengths match")
+                    else:
+                        print("✗ RGB indices and images lengths mismatch")
+
+            if 'timestamps_ns' in f:
+                timestamps_len = len(f['timestamps_ns'])
+                print(f"Timestamps length: {timestamps_len}")
+
+    except Exception as e:
+        print(f"Error in schema validation: {e}")
 
 if __name__ == "__main__":
     main()

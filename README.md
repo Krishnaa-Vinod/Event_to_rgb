@@ -34,30 +34,34 @@ Run the setup script to fetch model weights and dependencies:
 ### Quick start
 ```bash
 # Run full pipeline on the default dataset
-python scripts/run_all.py --config configs/defaults.yaml
+python scripts/run_all.py --bag-dir /scratch/kvinod/bags/overfitting_data/data_collect_20260228_153433 --h5-file /scratch/kvinod/bags/eGo_navi_overfit_data_h5/data_collect_20260228_153433.h5
 
 # Run on a smoke-test subset
-python scripts/run_all.py --config configs/defaults.yaml --smoke-test
+python scripts/run_all.py --bag-dir /scratch/kvinod/bags/overfitting_data/data_collect_20260228_153433 --h5-file /scratch/kvinod/bags/eGo_navi_overfit_data_h5/data_collect_20260228_153433.h5 --smoke-test
+
+# Alternative: Use paths configuration file
+python scripts/run_all.py --paths-config configs/paths.json
+python scripts/run_all.py --paths-config configs/paths.json --smoke-test
 ```
 
 ### Individual components
 ```bash
 # Inspect input data
-python scripts/inspect_inputs.py
+python scripts/inspect_inputs.py --bag-dir /path/to/bag --h5-file /path/to/file.h5
 
 # Export events from bags
-python scripts/export_events_from_bag.py
+python scripts/export_events_from_bag.py /path/to/bag --output /path/to/output
 
 # Run reconstructions
-python scripts/run_bag_reconstruction.py
-python scripts/run_h5_reconstruction.py
-python scripts/time_surface_baseline.py
+python scripts/run_bag_reconstruction.py --bag-events /path/to/events --output /path/to/output
+python scripts/run_h5_reconstruction_v2.py /path/to/file.h5 --output /path/to/output
+python scripts/time_surface_baseline.py /path/to/events.txt --output /path/to/output
 
 # Evaluate results
-python scripts/evaluate_reconstructions.py
+python scripts/evaluate_reconstructions.py --reconstruction-dir /path/to/recon --reference-h5 /path/to/ref.h5 --method-name method_name --output /path/to/output
 
 # Generate visualizations
-python scripts/make_visualizations.py
+python scripts/make_visualizations.py --h5-reference /path/to/ref.h5 --output /path/to/output
 ```
 
 ## Configuration
@@ -75,11 +79,27 @@ cp configs/paths.example.json configs/paths.json
 ## Results
 
 Results are saved to `results/` with:
-- `results/reports/`: CSV/JSON metrics and leaderboards
-- `results/figures/`: Plots and comparisons
+- `results/reports/pipeline_summary.json`: Overall pipeline execution status
+- `results/reports/leaderboard_fair_250ms.csv`: Primary quantitative leaderboard
+- `results/reports/leaderboard_fair_250ms.json`: Leaderboard in JSON format
+- `results/reports/per_sequence_metrics.csv`: Per-frame detailed metrics
+- `results/figures/`: Comparison plots and visualizations
 - `results/samples/`: Representative output images
 
+**Expected result files after successful run**:
+- `pipeline_summary.json`: Pipeline execution status and timing
+- `leaderboard_fair_250ms.csv`: Main performance comparison table
+- `comparison_panel_*.png`: Side-by-side reconstruction comparisons
+
 ## Technical Details
+
+This pipeline evaluates event-to-intensity reconstruction methods:
+- **Primary quantitative comparison**: Reconstructed grayscale intensity vs grayscale-converted RGB references
+- **Bag-direct route**: Uses raw events extracted from MCAP/bag files (exact reconstruction)
+- **H5-direct route**: Uses pre-computed voxel tensors converted to pseudo-events (**approximate reconstruction**)
+- **Evaluation metrics**: MSE, MAE, PSNR, SSIM on grayscale images with temporal alignment
+
+**Important**: The H5-direct route is marked as approximate because it converts voxel grids back to pseudo-events, which may not exactly match the original event stream.
 
 See the documentation for implementation details:
 - [docs/METHOD.md](docs/METHOD.md): Technical design and data routes

@@ -23,23 +23,31 @@ def load_rgb_references(h5_file):
     try:
         import h5py
         with h5py.File(h5_file, 'r') as f:
-            rgb_images = f['rgb_images'][...]  # (N, 1024, 1280, 3)
-            timestamps_ns = f['timestamps_ns'][...]
-            rgb_mask = f['rgb_mask'][...]
+            rgb_images = f['rgb_images'][...]  # (N_rgb, 1024, 1280, 3)
+            timestamps_ns = f['timestamps_ns'][...]  # All timestamps
 
-        # Filter to only frames with RGB data
-        valid_indices = np.where(rgb_mask)[0]
-        rgb_images = rgb_images[valid_indices]
-        timestamps_ns = timestamps_ns[valid_indices]
-
-        print(f"Loaded {len(rgb_images)} RGB reference images")
-        return rgb_images, timestamps_ns, valid_indices
+            # Check if rgb_indices exists (preferred) or fallback to rgb_mask
+            if 'rgb_indices' in f:
+                rgb_indices = f['rgb_indices'][...]
+                # Build reference timestamps using rgb_indices
+                ref_timestamps = timestamps_ns[rgb_indices]
+                print(f"Loaded {len(rgb_images)} RGB reference images using rgb_indices")
+                return rgb_images, ref_timestamps, rgb_indices
+            else:
+                print("Warning: rgb_indices not found, falling back to rgb_mask")
+                rgb_mask = f['rgb_mask'][...]
+                # Filter to only frames with RGB data
+                valid_indices = np.where(rgb_mask)[0]
+                rgb_images = rgb_images[valid_indices]
+                ref_timestamps = timestamps_ns[valid_indices]
+                print(f"Loaded {len(rgb_images)} RGB reference images using rgb_mask (fallback)")
+                return rgb_images, ref_timestamps, valid_indices
 
     except Exception as e:
         print(f"Error loading RGB references: {e}")
         return None, None, None
 
-def preprocess_image_for_comparison(img, target_shape=(720, 1280), to_grayscale=True):
+def preprocess_image_for_comparison(img, target_shape=(720, 1280), to_grayscale=True, is_h5_rgb=False):
     """
     Preprocess image for fair comparison.
 
@@ -47,13 +55,19 @@ def preprocess_image_for_comparison(img, target_shape=(720, 1280), to_grayscale=
         img: Input image (grayscale or color)
         target_shape: Target height, width
         to_grayscale: Convert to grayscale for comparison
+        is_h5_rgb: True if image is from H5 file (RGB order), False if from OpenCV (BGR order)
     """
 
     # Handle different input formats
     if len(img.shape) == 3 and img.shape[2] == 3:
         # Color image
         if to_grayscale:
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            if is_h5_rgb:
+                # H5 images are in RGB order
+                img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+            else:
+                # Images from OpenCV imread are in BGR order
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     elif len(img.shape) == 3 and img.shape[2] == 1:
         # Single channel with 3D shape
         img = img.squeeze()
@@ -248,11 +262,11 @@ def evaluate_reconstruction_method(
 
             # Preprocess for comparison
             recon_processed = preprocess_image_for_comparison(
-                recon_img, target_shape=(720, 1280), to_grayscale=True
+                recon_img, target_shape=(720, 1280), to_grayscale=True, is_h5_rgb=False
             )
 
             ref_processed = preprocess_image_for_comparison(
-                ref_img, target_shape=(720, 1280), to_grayscale=True
+                ref_img, target_shape=(720, 1280), to_grayscale=True, is_h5_rgb=True
             )
 
             # Compute metrics
