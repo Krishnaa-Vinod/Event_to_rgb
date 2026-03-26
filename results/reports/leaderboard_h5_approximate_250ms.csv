@@ -1,0 +1,2 @@
+method,route,window_ms,frames_generated,mean_intensity,std_intensity,blank_frames,total_frames,sanity_verdict,route_fidelity
+E2VID_H5_Direct,h5-voxel-pseudo,250,8,175.8,3.6,0,8,VALID,approximate

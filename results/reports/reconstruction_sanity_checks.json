@@ -1,0 +1,131 @@
+[
+  {
+    "method": "e2vid_bag_direct",
+    "reconstruction_dir": "outputs/test_e2vid_bag3/e2vid_window_250ms",
+    "total_images": 10,
+    "sampled_images": 10,
+    "valid_analyses": 10,
+    "aggregate_stats": {
+      "mean_intensity_avg": 116.38778125000002,
+      "mean_intensity_std": 15.348406793982873,
+      "std_intensity_avg": 14.186856813713012,
+      "std_intensity_std": 4.61394221400489,
+      "near_black_fraction_avg": 7.595486111111111e-07,
+      "blank_frame_count": 0,
+      "blank_frame_fraction": 0.0
+    },
+    "per_frame_details": [
+      {
+        "mean_intensity": 140.12548936631944,
+        "std_intensity": 5.6972748752373,
+        "near_black_fraction": 0.0,
+        "is_blank": false,
+        "resolution": [
+          720,
+          1280
+        ],
+        "filename": "frame_0000885867.png"
+      },
+      {
+        "mean_intensity": 145.826298828125,
+        "std_intensity": 4.352084130577599,
+        "near_black_fraction": 0.0,
+        "is_blank": false,
+        "resolution": [
+          720,
+          1280
+        ],
+        "filename": "frame_0001317041.png"
+      },
+      {
+        "mean_intensity": 95.84584743923611,
+        "std_intensity": 15.994778234830664,
+        "near_black_fraction": 1.0850694444444444e-06,
+        "is_blank": false,
+        "resolution": [
+          720,
+          1280
+        ],
+        "filename": "frame_0009097485.png"
+      },
+      {
+        "mean_intensity": 101.50265842013889,
+        "std_intensity": 17.06062513505219,
+        "near_black_fraction": 1.0850694444444444e-06,
+        "is_blank": false,
+        "resolution": [
+          720,
+          1280
+        ],
+        "filename": "frame_0016881821.png"
+      },
+      {
+        "mean_intensity": 108.20101453993055,
+        "std_intensity": 15.951803292028892,
+        "near_black_fraction": 1.0850694444444444e-06,
+        "is_blank": false,
+        "resolution": [
+          720,
+          1280
+        ],
+        "filename": "frame_0025472095.png"
+      },
+      {
+        "mean_intensity": 104.48099826388889,
+        "std_intensity": 16.905220921442428,
+        "near_black_fraction": 1.0850694444444444e-06,
+        "is_blank": false,
+        "resolution": [
+          720,
+          1280
+        ],
+        "filename": "frame_0032720431.png"
+      },
+      {
+        "mean_intensity": 117.09246419270833,
+        "std_intensity": 16.260663757458865,
+        "near_black_fraction": 0.0,
+        "is_blank": false,
+        "resolution": [
+          720,
+          1280
+        ],
+        "filename": "frame_0039984234.png"
+      },
+      {
+        "mean_intensity": 122.60837131076389,
+        "std_intensity": 17.154722610090268,
+        "near_black_fraction": 2.170138888888889e-06,
+        "is_blank": false,
+        "resolution": [
+          720,
+          1280
+        ],
+        "filename": "frame_0045594791.png"
+      },
+      {
+        "mean_intensity": 117.53344075520833,
+        "std_intensity": 16.730803397432233,
+        "near_black_fraction": 1.0850694444444444e-06,
+        "is_blank": false,
+        "resolution": [
+          720,
+          1280
+        ],
+        "filename": "frame_0051049960.png"
+      },
+      {
+        "mean_intensity": 110.66122938368055,
+        "std_intensity": 15.760591782979688,
+        "near_black_fraction": 0.0,
+        "is_blank": false,
+        "resolution": [
+          720,
+          1280
+        ],
+        "filename": "frame_0058986096.png"
+      }
+    ],
+    "sanity_verdict": "VALID"
+  }
+]

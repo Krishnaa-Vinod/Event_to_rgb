@@ -89,7 +89,6 @@ def run_e2vid_reconstruction(
         # Run E2VID
         result = subprocess.run(
             cmd,
-            cwd=str(e2vid_dir),
             capture_output=True,
             text=True,
             check=True
@@ -99,7 +98,7 @@ def run_e2vid_reconstruction(
         print(f"E2VID completed in {duration:.1f}s")
 
         # Count output frames and collect metadata
-        frame_files = list(output_path.glob("*.png"))
+        frame_files = list(output_path.glob("**/*.png"))  # Recursive search
         frame_files.sort()
         frame_count = len(frame_files)
 
@@ -240,7 +239,6 @@ def run_firenet_reconstruction(
         # Run FireNet
         result = subprocess.run(
             cmd,
-            cwd=str(firenet_dir),
             capture_output=True,
             text=True,
             check=True

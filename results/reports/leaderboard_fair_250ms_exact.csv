@@ -1,0 +1,3 @@
+method,route,window_ms,frames_generated,mean_intensity,std_intensity,blank_frames,total_frames,sanity_verdict,route_fidelity
+E2VID_Bag_Direct,bag-direct,250,8,117.0,17.0,0,8,VALID,exact
+TimeSurface_Bag_Direct,bag-direct,250,TBD,TBD,TBD,TBD,TBD,RUNNING,exact

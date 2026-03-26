@@ -1,0 +1,2 @@
+method,verdict,total_images,mean_intensity,std_intensity,blank_fraction,near_black_fraction
+e2vid_bag_direct,VALID,10,116.38778125000002,14.186856813713012,0.0,7.595486111111111e-07
